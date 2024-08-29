@@ -1,7 +1,60 @@
 #!/bin/bash
 
-echo "Running commands with sudo without password prompt!"
+echo "Starting Qt6 Build!"
 # Add your sudo commands here
 # sudo apt-get update
 # sudo mount -o loop,offset=XXXX myimage.img /mnt
 # sudo resize2fs /dev/loopX
+
+# Define the image file and mount point
+IMG_FILE="2024-07-04-raspios-bookworm-arm64-lite.img"
+MOUNT_POINT="/mnt/rpi-sysroot"
+START_OFFSET=1056768  # Adjust this value based on the output of `fdisk -l`
+# Calculate the offset in bytes
+OFFSET=$((START_OFFSET * 512))
+
+echo "Extracting image /home/qtpi/$IMG_FILE.xz"
+xz -d /home/qtpi/$IMG_FILE.xz
+echo "Truncating image +2G"
+truncate -s +2G /home/qtpi/$IMG_FILE
+echo "Resizing image"
+parted -s $IMG_FILE resizepart 2 100%
+
+mkdir -p $MOUNT_POINT
+
+# Mount the partition using the calculated offset
+sudo mount -o loop,offset=$OFFSET /home/qtpi/$IMG_FILE $MOUNT_POINT
+
+# List the contents of the mounted directory
+ls -l $MOUNT_POINT
+
+# Find the loop device associated with the mounted partition
+LOOP_DEVICE=$(lsblk -o NAME,MOUNTPOINT | grep "$MOUNT_POINT" | awk '{print $1}')
+
+# Check if the loop device was found
+if [ -z "$LOOP_DEVICE" ]; then
+    echo "Error: Could not find the loop device for the mounted partition."
+    exit 1
+fi
+
+# Resize the filesystem on the loop device
+resize2fs /dev/$LOOP_DEVICE
+
+# Output the result
+echo "The filesystem on /dev/$LOOP_DEVICE has been resized."
+
+sudo mount -o bind /dev $MOUNT_POINT/dev
+sudo mount -o bind /proc $MOUNT_POINT/proc
+sudo mount -o bind /sys $MOUNT_POINT/sys
+sudo mount -o bind /dev/pts $MOUNT_POINT/dev/pts
+
+cp /usr/bin/qemu-arm-static $MOUNT_POINT/bin
+
+chroot $MOUNT_POINT /bin/bash -c "apt update && apt install -y libboost-all-dev libudev-dev libinput-dev libts-dev libmtdev-dev libjpeg-dev libfontconfig1-dev libssl-dev libdbus-1-dev libglib2.0-dev libxkbcommon-dev libegl1-mesa-dev libgbm-dev libgles2-mesa-dev mesa-common-dev libasound2-dev libpulse-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev  gstreamer1.0-alsa libvpx-dev libsrtp2-dev libsnappy-dev libnss3-dev "^libxcb.*" flex bison libxslt-dev ruby gperf libbz2-dev libcups2-dev libatkmm-1.6-dev libxi6 libxcomposite1 libfreetype6-dev libicu-dev libsqlite3-dev libxslt1-dev libavcodec-dev libavformat-dev libswscale-dev libx11-dev freetds-dev libpq-dev libiodbc2-dev firebird-dev libxext-dev libxcb1 libxcb1-dev libx11-xcb1 libx11-xcb-dev libxcb-keysyms1 libxcb-keysyms1-dev libxcb-image0 libxcb-image0-dev libxcb-shm0 libxcb-shm0-dev libxcb-icccm4 libxcb-icccm4-dev libxcb-sync1 libxcb-sync-dev libxcb-render-util0 libxcb-render-util0-dev libxcb-xfixes0-dev libxrender-dev libxcb-shape0-dev libxcb-randr0-dev libxcb-glx0-dev libxi-dev libdrm-dev libxcb-xinerama0 libxcb-xinerama0-dev libatspi2.0-dev libxcursor-dev libxcomposite-dev libxdamage-dev libxss-dev libxtst-dev libpci-dev libcap-dev libxrandr-dev libdirectfb-dev libaudio-dev libxkbcommon-x11-dev libvulkan-dev vulkan-tools mesa-vulkan-drivers libbluetooth-dev bluez bluez-tools"
+chroot $MOUNT_POINT /bin/bash -c "mkdir /usr/local/qt6"
+
+sudo umount $MOUNT_POINT/dev/pts
+sudo umount $MOUNT_POINT/dev
+sudo umount $MOUNT_POINT/proc
+sudo umount $MOUNT_POINT/sys
+sudo umount $MOUNT_POINT

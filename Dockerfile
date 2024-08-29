@@ -73,9 +73,13 @@ RUN useradd -m -s /bin/bash qtpi && echo 'qtpi:qtpi' | chpasswd && adduser qtpi 
 
 # Allow 'qtpi' user to use sudo without a password
 RUN echo 'qtpi ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-
 # Set the working directory
 WORKDIR /home/qtpi
+
+# Download Raspbian OS Lite 64Bit
+RUN wget -O /home/qtpi/2024-07-04-raspios-bookworm-arm64-lite.img.xz https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-07-04/2024-07-04-raspios-bookworm-arm64-lite.img.xz
+
+RUN apt install -y udev
 
 # Copy the script into the Docker container
 COPY qt-build.sh /home/qtpi/qt-build.sh
