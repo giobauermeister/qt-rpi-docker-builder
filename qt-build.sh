@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# docker build --tag qtpi/qtpi:1.0 .
+# docker run --privileged -it qtpi/qtpi:1.0
+
 echo "Starting Qt6 Build!"
 # Add your sudo commands here
 # sudo apt-get update
