@@ -1,23 +1,30 @@
 FROM ubuntu:22.04
 
+ENV TZ=America/Sao_Paulo
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+ARG USER
+ARG UID
+ARG GID
+
 # The Qt version to build
 ARG QT_VERSION=6.5.3
+ARG RPI_IMAGE=2024-07-04-raspios-bookworm-arm64-lite.img.xz
 ARG PARALLELIZATION=12
-ARG TZ=America/Sao_Paulo
 ENV DEBIAN_FRONTEND=noninteractive
 
 #############################
 # Prepare and update Ubuntu #
 #############################
-RUN apt update \
- && apt upgrade -y
+RUN apt update
 
 #############################
 # Install required packages #
 #############################
 # Qt
-RUN TZ="${TZ}" apt install -y \
+RUN apt install -y \
 sudo \
+perl \
 make \ 
 cmake \ 
 build-essential \ 
@@ -58,36 +65,64 @@ libgl1-mesa-dev \
 libglu1-mesa-dev \ 
 freeglut3-dev \
 # cross-compiler toolchain \
-&& apt install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
+gcc-aarch64-linux-gnu \ 
+g++-aarch64-linux-gnu \
 # package for building CMake \
-&& apt install -y libssl-dev \
+libssl-dev \
 # data transfer \
-&& apt install -y rsync wget \
-# for chroot
-&& apt install -y qemu-user-static parted
+rsync \
+wget \
+# for chroot \
+qemu-user-static \
+parted \
+udev
 
-# RUN apt install -y sudo
+RUN apt-get clean --yes && rm -rf /var/lib/apt/lists/*
 
-# Create a non-root user with sudo privileges
-RUN useradd -m -s /bin/bash qtpi && echo 'qtpi:qtpi' | chpasswd && adduser qtpi sudo
+RUN useradd -m ${USER} --uid=${UID} && echo "${USER}:${USER}" | chpasswd && adduser ${USER} sudo
+RUN echo "Set disable_coredump false" >> /etc/sudo.conf
+RUN echo "sudo ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+RUN echo "${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-# Allow 'qtpi' user to use sudo without a password
-RUN echo 'qtpi ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-# Set the working directory
-WORKDIR /home/qtpi
+USER ${UID}:${GID}
+
+WORKDIR /home/${USER}
+# Create Qt directories
+RUN mkdir qt-raspi qt-host qt-pibuild qt-hostbuild
 
 # Download Raspbian OS Lite 64Bit
-RUN wget -O /home/qtpi/2024-07-04-raspios-bookworm-arm64-lite.img.xz https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-07-04/2024-07-04-raspios-bookworm-arm64-lite.img.xz
+RUN echo "Download RPi image: ${RPI_IMAGE}"
+RUN wget -O ${RPI_IMAGE} https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-07-04/${RPI_IMAGE}
+RUN echo "Extracting image ${RPI_IMAGE}"
+RUN xz -d ${RPI_IMAGE}
 
-RUN apt install -y udev
+# Clone Qt6 source
+RUN git clone -b ${QT_VERSION} "https://codereview.qt-project.org/qt/qt5" qt6
+WORKDIR /home/${USER}/qt6
+RUN git submodule update --init \
+qtbase \
+qtdeclarative \
+qtsvg \
+qtimageformats \
+qtmultimedia \
+qtwebsockets \
+qtserialport \
+qtcharts \
+qtconnectivity \
+qtnetworkauth \
+qtmqtt \
+qthttpserver \
+qtcharts \
+qtshadertools
+
+WORKDIR /home/${USER}
 
 # Copy the script into the Docker container
-COPY qt-build.sh /home/qtpi/qt-build.sh
+USER root
+COPY qt-build.sh /home/${USER}/qt-build.sh
+RUN chmod +x /home/${USER}/qt-build.sh
+COPY rpi-toolchain.cmake /home/${USER}/rpi-toolchain.cmake
 
-# Make the script executable
-RUN chmod +x /home/qtpi/qt-build.sh
-
-USER qtpi
-
+USER ${UID}:${GID}
 # Run the shell script
-CMD ["sudo", "./qt-build.sh"]
+CMD ["./qt-build.sh"]
