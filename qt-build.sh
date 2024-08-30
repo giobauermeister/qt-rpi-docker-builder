@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# docker build --tag qtpi/qtpi:1.0 .
-# docker run --privileged -it qtpi/qtpi:1.0
-
 echo "Starting RPi image customization!"
 
 # Define the image file and mount point
@@ -59,12 +56,6 @@ sudo chroot $MOUNT_POINT /bin/bash -c "apt update && apt install -y xinput-calib
 sudo chroot $MOUNT_POINT /bin/bash -c "mkdir -p /usr/local/qt6"
 sudo chroot $MOUNT_POINT /bin/bash -c "echo 'LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/qt6/lib/' | tee -a /etc/environment > /dev/null"
 
-# sudo umount $MOUNT_POINT/dev/pts
-# sudo umount $MOUNT_POINT/dev
-# sudo umount $MOUNT_POINT/proc
-# sudo umount $MOUNT_POINT/sys
-# sudo umount $MOUNT_POINT
-
 echo "Starting Qt Host Build!"
 
 cd $HOME/qt-hostbuild
@@ -101,3 +92,17 @@ cd $HOME/qt-pibuild
 
 cmake --build . --parallel
 cmake --install .
+
+echo "Copying build artifacts to $MOUNT_POINT/usr/local/qt6"
+sudo cp -r $HOME/qt-raspi/* $MOUNT_POINT/usr/local/qt6
+
+echo "Copying build artifacts to host!"
+cp -r $HOME/qt-raspi $HOME/qt-host $HOME/$RPI_IMAGE $HOME/build-out
+sudo cp -r $HOME/rpi-sysroot $HOME/build-out
+
+echo "Unmounting rpi-sysroot!"
+sudo umount $MOUNT_POINT/dev/pts
+sudo umount $MOUNT_POINT/dev
+sudo umount $MOUNT_POINT/proc
+sudo umount $MOUNT_POINT/sys
+sudo umount $MOUNT_POINT

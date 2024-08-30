@@ -24,6 +24,7 @@ RUN apt update
 # Qt
 RUN apt install -y \
 sudo \
+locales \
 perl \
 make \ 
 cmake \ 
@@ -79,16 +80,27 @@ udev
 
 RUN apt-get clean --yes && rm -rf /var/lib/apt/lists/*
 
+# Generate and set the locale
+RUN locale-gen en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+RUN dpkg-reconfigure --frontend=noninteractive locales && update-locale LANG=en_US.UTF-8
+
 RUN useradd -m ${USER} --uid=${UID} && echo "${USER}:${USER}" | chpasswd && adduser ${USER} sudo
 RUN echo "Set disable_coredump false" >> /etc/sudo.conf
 RUN echo "sudo ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 RUN echo "${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
+COPY qt-build.sh /home/${USER}/qt-build.sh
+RUN chmod +x /home/${USER}/qt-build.sh
+COPY rpi-toolchain.cmake /home/${USER}/rpi-toolchain.cmake
+
 USER ${UID}:${GID}
 
 WORKDIR /home/${USER}
 # Create Qt directories
-RUN mkdir qt-raspi qt-host qt-pibuild qt-hostbuild
+RUN mkdir qt-raspi qt-host qt-pibuild qt-hostbuild build-out
 
 # Download Raspbian OS Lite 64Bit
 RUN echo "Download RPi image: ${RPI_IMAGE}"
@@ -117,12 +129,5 @@ qtshadertools
 
 WORKDIR /home/${USER}
 
-# Copy the script into the Docker container
-USER root
-COPY qt-build.sh /home/${USER}/qt-build.sh
-RUN chmod +x /home/${USER}/qt-build.sh
-COPY rpi-toolchain.cmake /home/${USER}/rpi-toolchain.cmake
-
-USER ${UID}:${GID}
 # Run the shell script
 CMD ["./qt-build.sh"]
