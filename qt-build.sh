@@ -19,14 +19,20 @@ parted -s $RPI_IMAGE resizepart 2 100%
 
 mkdir -p $MOUNT_POINT
 
+LOOP_DEVICE=$(lsblk -o NAME,MOUNTPOINT | grep "$MOUNT_POINT" | awk '{print $1}')
+# Check if there is already a loop device
+if [ -z "$LOOP_DEVICE" ]; then
+    echo "No loop device found"
+    exit 1
+else
+    sudo losetup -d $LOOP_DEVICE
+fi
+
 # Create loop device
 sudo losetup -fP $RPI_IMAGE
 
 # Mount the partition using the calculated offset
 sudo mount -o loop,offset=$OFFSET $RPI_IMAGE $MOUNT_POINT
-
-# List the contents of the mounted directory
-ls -l $MOUNT_POINT
 
 # Find the loop device associated with the mounted partition
 LOOP_DEVICE=$(lsblk -o NAME,MOUNTPOINT | grep "$MOUNT_POINT" | awk '{print $1}')
