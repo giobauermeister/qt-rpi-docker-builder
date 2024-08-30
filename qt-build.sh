@@ -23,6 +23,7 @@ LOOP_DEVICE=$(losetup -j $RPI_IMAGE | awk -F: '{print $1}')
 # Check if there is already a loop device
 if [ -n "$LOOP_DEVICE" ]; then
     echo "Loop device already found"
+    LOOP_DEVICE=$(lsblk -o NAME,MOUNTPOINT | grep "$MOUNT_POINT" | awk '{print $1}')
     sudo losetup -d $LOOP_DEVICE
 fi
 
