@@ -23,14 +23,15 @@ LOOP_DEVICE=$(losetup -j $RPI_IMAGE | awk -F: '{print $1}')
 # Check if there is already a loop device
 if [ -n "$LOOP_DEVICE" ]; then
     echo "Loop device already found"
-    LOOP_DEVICE=$(lsblk -o NAME,MOUNTPOINT | grep "$MOUNT_POINT" | awk '{print $1}')
     sudo losetup -d $LOOP_DEVICE
 fi
 
 # Create loop device
+echo "sudo losetup -fP $RPI_IMAGE"
 sudo losetup -fP $RPI_IMAGE
 
 # Mount the partition using the calculated offset
+echo "sudo mount -o loop,offset=$OFFSET $RPI_IMAGE $MOUNT_POINT"
 sudo mount -o loop,offset=$OFFSET $RPI_IMAGE $MOUNT_POINT
 
 # Find the loop device associated with the mounted partition
