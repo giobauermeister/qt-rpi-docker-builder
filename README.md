@@ -35,7 +35,7 @@ mkdir $HOME/qt-build
 - Run a container with the image and pass $HOME/qt-build as volume
 
 ```
-docker run --privileged -it -v $HOME/qt-build:$HOME/qt-build qt-builder/qt-builder:1.0
+docker run --rm --privileged -it -v $HOME/qt-build:$HOME/qt-build qt-builder/qt-builder:1.0
 ```
 
 - You should have the following build artifacts generated
