@@ -26,10 +26,6 @@ if [ -n "$LOOP_DEVICE" ]; then
     sudo losetup -d $LOOP_DEVICE
 fi
 
-# Create loop device
-echo "sudo losetup -fP $RPI_IMAGE"
-sudo losetup -fP $RPI_IMAGE
-
 # Mount the partition using the calculated offset
 echo "sudo mount -o loop,offset=$OFFSET $RPI_IMAGE $MOUNT_POINT"
 sudo mount -o loop,offset=$OFFSET $RPI_IMAGE $MOUNT_POINT
