@@ -33,7 +33,7 @@ sudo losetup -fP $RPI_IMAGE
 sudo mount -o loop,offset=$OFFSET $RPI_IMAGE $MOUNT_POINT
 
 # Find the loop device associated with the mounted partition
-LOOP_DEVICE=$(losetup -j $RPI_IMAGE | awk -F: '{print $1}')
+LOOP_DEVICE=$(lsblk -o NAME,MOUNTPOINT | grep "$MOUNT_POINT" | awk '{print $1}')
 
 # Check if the loop device was found
 if [ -z "$LOOP_DEVICE" ]; then
