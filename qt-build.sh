@@ -50,7 +50,7 @@ sudo mount -o bind /proc $MOUNT_POINT/proc
 sudo mount -o bind /sys $MOUNT_POINT/sys
 sudo mount -o bind /dev/pts $MOUNT_POINT/dev/pts
 
-sudo cp /usr/bin/qemu-arm-static $MOUNT_POINT/bin
+sudo cp /usr/bin/qemu-aarch64-static $MOUNT_POINT/usr/bin
 
 sudo chroot $MOUNT_POINT /bin/bash -c "apt update"
 sudo chroot $MOUNT_POINT /bin/bash -c "apt install -y locales && locale-gen en_US.UTF-8 && update-locale LANG=en_US.UTF-8 LANGUAGE=en_US:en LC_ALL=en_US.UTF-8 && dpkg-reconfigure --frontend=noninteractive locales"
