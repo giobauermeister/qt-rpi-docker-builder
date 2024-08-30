@@ -19,6 +19,9 @@ parted -s $RPI_IMAGE resizepart 2 100%
 
 mkdir -p $MOUNT_POINT
 
+# Create loop device
+sudo losetup -fP $RPI_IMAGE
+
 # Mount the partition using the calculated offset
 sudo mount -o loop,offset=$OFFSET $RPI_IMAGE $MOUNT_POINT
 
