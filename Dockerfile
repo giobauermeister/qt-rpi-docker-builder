@@ -92,21 +92,13 @@ RUN echo "Set disable_coredump false" >> /etc/sudo.conf
 RUN echo "sudo ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 RUN echo "${USER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-COPY qt-build.sh /home/${USER}/qt-build.sh
-RUN chmod +x /home/${USER}/qt-build.sh
-COPY rpi-toolchain.cmake /home/${USER}/rpi-toolchain.cmake
-
 USER ${UID}:${GID}
 
-WORKDIR /home/${USER}
-# Create Qt directories
-RUN mkdir qt-raspi qt-host qt-pibuild qt-hostbuild build-out
+# WORKDIR /home/${USER}/qt-build
+# # Create Qt directories
+# RUN mkdir qt-raspi qt-host qt-pibuild qt-hostbuild
 
-# Download Raspbian OS Lite 64Bit
-RUN echo "Download RPi image: ${RPI_IMAGE}"
-RUN wget -O ${RPI_IMAGE} https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-07-04/${RPI_IMAGE}
-RUN echo "Extracting image ${RPI_IMAGE}"
-RUN xz -d ${RPI_IMAGE}
+WORKDIR /home/${USER}
 
 # Clone Qt6 source
 RUN git clone -b ${QT_VERSION} "https://codereview.qt-project.org/qt/qt5" qt6
@@ -128,6 +120,16 @@ qtcharts \
 qtshadertools
 
 WORKDIR /home/${USER}
+# Download Raspbian OS Lite 64Bit
+RUN echo "Download RPi image: ${RPI_IMAGE}"
+RUN wget -O ${RPI_IMAGE} https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2024-07-04/${RPI_IMAGE}
+RUN echo "Extracting image ${RPI_IMAGE}"
+RUN xz -d ${RPI_IMAGE}
 
+COPY rpi-toolchain.cmake /home/${USER}/rpi-toolchain.cmake
+COPY --chown=${UID}:${GID} qt-build.sh /home/${USER}/qt-build.sh
+RUN chmod +x /home/${USER}/qt-build.sh
+
+WORKDIR /home/${USER}
 # Run the shell script
 CMD ["./qt-build.sh"]
