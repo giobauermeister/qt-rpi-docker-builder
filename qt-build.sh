@@ -21,10 +21,8 @@ mkdir -p $MOUNT_POINT
 
 LOOP_DEVICE=$(lsblk -o NAME,MOUNTPOINT | grep "$MOUNT_POINT" | awk '{print $1}')
 # Check if there is already a loop device
-if [ -z "$LOOP_DEVICE" ]; then
-    echo "No loop device found"
-    exit 1
-else
+if [ -n "$LOOP_DEVICE" ]; then
+    echo "Loop device already found"
     sudo losetup -d $LOOP_DEVICE
 fi
 
