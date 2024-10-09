@@ -56,4 +56,47 @@ qt-host
 
 ## Using build artifacts with Qt Creator
 
-TODO
+- Mount generated image **2024-07-04-raspios-bookworm-arm64-lite.img**
+```
+sudo mkdir /mnt/rpi-sysroot
+sudo mount -o loop,offset=$((1056768*512)) $HOME/qt-build/2024-07-04-raspios-bookworm-arm64-lite.img /mnt/rpi-sysroot/
+```
+
+- Open Qt Creator
+
+- Go to `Edit -> Preferences -> Devices -> Devices` and create a new device for Raspberry Pi with SSH connection
+- Give a name for the device and set ip address or hostname (eg raspberrypi.local)
+- You can test connection and deploy ssh keys for passwordless access
+
+![alt text](repo-images/devices.png)
+
+- Go to `Edit -> Preferences -> Kits -> Qt Versions` and add _$HOME/qt-build/qt-raspi/bin/qmake_
+
+![alt text](repo-images/qt-versions.png)
+
+- Go to `Edit -> Preferences -> Kits -> Compilers` and add GCC arm64 cross compiler toolchain  
+(Cross toolchain can be installed using ubuntu's apt)
+(This can be improved generating a cross toolchain inside container using crosstool-NG)
+
+![alt text](repo-images/toolchain.png)
+
+- Go to `Edit -> Preferences -> Kits -> Kits` and add a new Kit for RPi
+- Chose the previously created Device, Compiler, Sysroot and Qt Version
+
+![alt text](repo-images/kits.png)
+
+- Now you can create a new project and select the RPi Kit
+
+![alt text](repo-images/new-project.png)
+
+![alt text](repo-images/kit-selection.png)
+
+- When project is created go to Run Settings
+- Select override deployment data from build system
+- Edit source file path and target directory
+- Add step 'Kill current application instance'
+- Add step 'Uploade files via SFTP'
+- Command line arguments should be `-platform eglfs`
+- Set LD_LIBRARY_PATH to `/usr/local/qt6/lib`
+
+![alt text](repo-images/run-settings.png)
