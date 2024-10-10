@@ -2,7 +2,7 @@
 
 This Docker image builds and cross compiles Qt 6.5.3 for Raspberry Pi. 
 It generates build for host and RPi so it can be used with Qt Creator after build. 
-It generates a 2024-07-04-raspios-bookworm-arm64-lite.img, ready to install to SD card, containing all necessary packages and libraries to run Qt on Raspberry Pi. 
+It generates a 2024-07-04-raspios-bookworm-arm64-lite.img, ready to be flashed to an SD card, containing all necessary packages and libraries to run Qt on Raspberry Pi. 
 
 ## Building the Docker image and running the container
 
